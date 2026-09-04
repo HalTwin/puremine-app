@@ -97,12 +97,38 @@ async function refreshDashboard() {
     const hbtcPerEth = pf * pf;                    // 1 ETH = ? HBTC
     const ethPerHbtc = hbtcPerEth ? 1 / hbtcPerEth : 0; // 1 HBTC = ? ETH
     setText("curBlock", "#" + curBlockIndex);
+    setText("curWork", fmtEther(W, 3));
     setText("blockWork", fmtEther(W, 3));
     setText("tollRate", (toll / 100).toFixed(1));
     setText("hbtcPrice", ethPerHbtc.toExponential(3));
     window._W = W; window._toll = toll;           // 供预估用
     updateSingleEstimate();
+    refreshBlocks(curBlockIndex);                 // 刷新"近期矿块"横排
   } catch (e) { console.warn("dashboard", e); }
+}
+
+// 近期矿块横排:当前块 + 最近 5 个已封存块(全网算力 W + 产量 + 封存时间)
+async function refreshBlocks(idx) {
+  const row = document.getElementById("blocksRow");
+  if (!row) return;
+  row.querySelectorAll(".blk.sealed").forEach((e) => e.remove()); // 清旧
+  const now = Math.floor(Date.now() / 1000);
+  const cards = [];
+  for (let i = 1n; i <= 5n; i++) {
+    const bi = idx - i;
+    if (bi < 0n) break;
+    let w = 0n;
+    try { w = await readUint(CFG.HOOK, SEL.totalWorkOf + enc32Uint(bi)); } catch (e) { }
+    const sealedAt = CFG.GENESIS + Number(bi + 1n) * CFG.ROUND;
+    const ago = now - sealedAt;
+    const agoStr = ago < 60 ? "刚封存" : ago < 3600 ? Math.floor(ago / 60) + " 分钟前" : Math.floor(ago / 3600) + " 小时前";
+    cards.push(
+      `<div class="blk sealed"><div class="bt"><span class="bn">#${bi}</span><span class="tag">已封存</span></div>` +
+      `<div class="big gold">2430 HBTC</div><div class="sub">${fmtEther(w, 3)} ETH 全网</div>` +
+      `<div class="subm">${agoStr}</div></div>`
+    );
+  }
+  row.insertAdjacentHTML("beforeend", cards.join(""));
 }
 function tickCountdown() {
   if (!roundEnd) return;
