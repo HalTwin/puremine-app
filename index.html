@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PureMine · 纯挖矿工具</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --paper:#ECE4D5;
+  --paper-2:#E5DBC7;
+  --ink:#181310;
+  --ink-2:#211A13;
+  --ink-3:#2B211A;
+  --glass:rgba(255,240,214,.04);
+  --line-d:rgba(255,238,210,.10);
+  --line-d2:rgba(255,238,210,.18);
+  --line-l:rgba(40,28,18,.13);
+  --gold:#F0A63A;
+  --gold-2:#F6C56A;
+  --gold-deep:#C67C1F;
+  --gold-glow:rgba(240,166,58,.22);
+  --cream:#F2E9D8;
+  --cream-mut:#A99A81;
+  --cream-faint:#7B6E58;
+  --ink-text:#241C13;
+  --ink-mut:#6C5E4C;
+  --zero:#93BE86;
+  --radius:15px;
+  --radius-lg:22px;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --serif:"Fraunces",Georgia,"Times New Roman",serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--sans);color:var(--ink-text);
+  background:
+    radial-gradient(1100px 480px at 50% -8%, rgba(240,166,58,.10), transparent 60%),
+    radial-gradient(700px 400px at 92% 4%, rgba(240,166,58,.06), transparent 55%),
+    linear-gradient(180deg,var(--paper),var(--paper-2));
+  background-attachment:fixed;min-height:100vh;line-height:1.5;
+  -webkit-font-smoothing:antialiased;letter-spacing:.005em;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 22px 60px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.gold{color:var(--gold)}
+
+/* ---------- nav (on paper) ---------- */
+.nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:6px 2px 20px}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:40px;height:40px;flex:none;filter:drop-shadow(0 6px 14px rgba(198,124,31,.4))}
+.brand-txt{display:flex;flex-direction:column;line-height:1.05}
+.brand-name{font-family:var(--serif);font-weight:600;font-size:22px;letter-spacing:-.01em;color:var(--ink-text)}
+.brand-sub{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold-deep);font-weight:600;margin-top:1px}
+.nav-right{display:flex;align-items:center;gap:10px}
+.chip-l{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-mut);
+  background:rgba(255,255,255,.4);border:1px solid var(--line-l);border-radius:999px;padding:8px 13px;white-space:nowrap}
+.navlink{display:inline-flex;align-items:center;gap:6px;font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--gold-deep);text-decoration:none;cursor:pointer;
+  background:rgba(255,255,255,.5);border:1px solid var(--line-l);border-radius:999px;padding:8px 13px;transition:.16s;white-space:nowrap}
+.navlink:hover{border-color:var(--gold);background:rgba(240,166,58,.1)}
+.navlink svg{width:14px;height:14px;flex:none}
+.lang{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:12px;cursor:pointer;color:var(--ink-mut);
+  background:rgba(255,255,255,.5);border:1px solid var(--line-l);border-radius:999px;padding:7px 11px;transition:.16s}
+.lang b{color:var(--ink-text);font-weight:600}
+.lang:hover{border-color:var(--gold)}
+.modal-bg{position:fixed;inset:0;background:rgba(20,12,4,.55);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:20px;z-index:60}
+.modal-bg.show{display:flex}
+.modal{max-width:560px;width:100%;max-height:86vh;overflow-y:auto;background:linear-gradient(180deg,#1E1711,#151009);border:1px solid var(--line-d2);border-radius:20px;color:var(--cream);box-shadow:0 40px 80px -30px rgba(0,0,0,.7)}
+.modal-h{display:flex;align-items:center;justify-content:space-between;padding:20px 22px 0}
+.modal-h h3{font-family:var(--serif);font-size:20px;font-weight:600}
+.modal .x{background:none;border:0;color:var(--cream-mut);font-size:19px;cursor:pointer;line-height:1;padding:4px}
+.modal .x:hover{color:var(--cream)}
+.modal-b{padding:14px 22px 22px}
+.modal-b .lead{color:var(--cream-mut);font-size:13.5px;line-height:1.6;margin-bottom:16px}
+.steps{list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:12px}
+.steps li{position:relative;padding-left:38px;font-size:13.5px;line-height:1.55;color:var(--cream)}
+.steps li b{color:var(--gold-2);font-weight:600}
+.steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:-1px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600;color:#3a2a12;background:linear-gradient(180deg,var(--gold-2),var(--gold));border-radius:8px}
+.modal-note{margin-top:16px;padding:12px 14px;background:var(--glass);border:1px solid var(--line-d);border-radius:12px;font-size:12.5px;color:var(--cream-mut)}
+.dot{width:7px;height:7px;border-radius:50%;background:#57ac6a;box-shadow:0 0 0 3px rgba(87,172,106,.18)}
+.wallet{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12.5px;font-weight:500;
+  color:#3a2a12;background:linear-gradient(180deg,var(--gold-2),var(--gold));
+  border:1px solid var(--gold-deep);border-radius:999px;padding:9px 15px;cursor:pointer;transition:.18s;
+  box-shadow:0 8px 18px -8px rgba(198,124,31,.6)}
+.wallet:hover{transform:translateY(-1px);box-shadow:0 12px 22px -8px rgba(198,124,31,.7)}
+.wallet .dot{background:#3a2a12;box-shadow:0 0 0 3px rgba(58,42,18,.25)}
+
+/* ---------- thesis (on paper) ---------- */
+.thesis{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;margin:2px 2px 16px}
+.thesis h1{font-family:var(--serif);font-weight:600;font-size:16.5px;line-height:1.4;letter-spacing:0;color:var(--ink-text)}
+.thesis h1 em{font-style:italic;color:var(--gold-deep)}
+.thesis p{color:var(--ink-mut);font-size:12.5px;margin-top:2px}
+.trust{display:flex;flex-wrap:wrap;gap:8px}
+.trust .tchip{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-text);font-weight:500;
+  background:rgba(255,255,255,.5);border:1px solid var(--line-l);border-radius:10px;padding:8px 12px}
+.trust svg{width:14px;height:14px;color:var(--gold-deep);flex:none}
+
+/* ---------- console (dark, aligned to official) ---------- */
+.console{background:linear-gradient(180deg,#1C160F,#140F0A);border:1px solid var(--line-d2);
+  border-radius:var(--radius-lg);padding:18px;color:var(--cream);position:relative;overflow:hidden;
+  box-shadow:0 40px 70px -34px rgba(70,44,14,.55), inset 0 1px 0 rgba(255,238,210,.05)}
+.console::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(600px 200px at 12% 0%, rgba(240,166,58,.10), transparent 60%)}
+
+/* recent blocks row */
+.blocks{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;position:relative;scrollbar-width:thin}
+.blocks::-webkit-scrollbar{height:6px}
+.blocks::-webkit-scrollbar-thumb{background:var(--line-d2);border-radius:3px}
+.blk{flex:none;width:150px;background:linear-gradient(180deg,var(--ink-2),var(--ink));border:1px solid var(--line-d);
+  border-radius:14px;padding:13px 14px}
+.blk.cur{border-color:var(--gold);background:linear-gradient(180deg,rgba(240,166,58,.14),rgba(240,166,58,.03));
+  box-shadow:0 0 0 1px var(--gold) inset, 0 12px 26px -14px var(--gold-glow)}
+.blk .bt{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.blk .bn{font-family:var(--mono);font-size:14px;font-weight:600}
+.blk .tag{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--cream-faint)}
+.blk.cur .tag{color:var(--gold)}
+.blk .cd{font-family:var(--mono);font-size:22px;font-weight:600;letter-spacing:.01em;color:var(--gold-2)}
+.blk .big{font-family:var(--mono);font-size:16px;font-weight:600}
+.blk .sub{font-family:var(--mono);font-size:11px;color:var(--cream-mut);margin-top:6px}
+.blk .subm{font-size:10.5px;color:var(--cream-faint);margin-top:5px}
+
+.hr{height:1px;background:var(--line-d);margin:16px 2px}
+
+/* current block detail */
+.cbh{display:flex;align-items:baseline;gap:12px;padding:0 2px 2px}
+.cbh h2{font-family:var(--serif);font-size:24px;font-weight:600;letter-spacing:-.01em}
+.cbh .badge{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--gold);
+  background:rgba(240,166,58,.12);border:1px solid rgba(240,166,58,.3);border-radius:999px;padding:4px 10px}
+.cbh .meta{font-family:var(--mono);font-size:12px;color:var(--cream-mut);margin-left:auto}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.stat{background:linear-gradient(180deg,var(--ink-2),var(--ink));border:1px solid var(--line-d);border-radius:13px;padding:13px 15px}
+.stat .k{font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--cream-faint);margin-bottom:8px}
+.stat .v{font-family:var(--mono);font-size:19px;font-weight:600}
+.stat .v small{font-size:12px;color:var(--cream-mut);font-weight:400}
+
+/* ---------- main grid ---------- */
+.grid{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;align-items:start;margin-top:16px}
+.card{background:linear-gradient(180deg,#1C160F,#140F0A);border:1px solid var(--line-d2);border-radius:var(--radius-lg);
+  color:var(--cream);box-shadow:0 30px 56px -32px rgba(70,44,14,.5), inset 0 1px 0 rgba(255,238,210,.05)}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:17px 19px 0}
+.card-h h2{font-family:var(--serif);font-size:18px;font-weight:600;letter-spacing:-.01em}
+.chip-d{font-size:11px;color:var(--cream-mut);background:var(--glass);border:1px solid var(--line-d);border-radius:999px;padding:5px 10px}
+
+/* tabs */
+.tabs{display:flex;gap:4px;background:rgba(0,0,0,.3);border:1px solid var(--line-d);border-radius:12px;padding:4px;margin:15px 19px 0}
+.tab{flex:1;text-align:center;font-size:13.5px;font-weight:600;color:var(--cream-mut);padding:9px 10px;border-radius:9px;cursor:pointer;transition:.16s}
+.tab:hover{color:var(--cream)}
+.tab.on{color:#3a2a12;background:linear-gradient(180deg,var(--gold-2),var(--gold));box-shadow:0 6px 16px -8px var(--gold-glow)}
+.tab .mini{display:block;font-size:10px;font-weight:500;margin-top:2px;opacity:.82}
+
+.pane{display:none;padding:17px 19px 19px;animation:fade .25s ease}
+.pane.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+.field{background:rgba(0,0,0,.3);border:1px solid var(--line-d);border-radius:14px;padding:14px 16px;transition:.16s}
+.field:focus-within{border-color:rgba(240,166,58,.55);box-shadow:0 0 0 4px var(--gold-glow)}
+.flabel{display:flex;justify-content:space-between;font-size:11.5px;color:var(--cream-faint);margin-bottom:8px}
+.frow{display:flex;align-items:baseline;gap:8px}
+.field input{background:none;border:0;outline:0;color:var(--cream);font-family:var(--mono);font-size:30px;font-weight:600;width:100%;letter-spacing:-.01em}
+.cur{font-family:var(--mono);font-size:15px;color:var(--cream-mut);font-weight:500}
+.quick{display:flex;gap:7px;margin-top:11px}
+.quick button{font-family:var(--mono);font-size:12px;color:var(--cream-mut);background:var(--glass);border:1px solid var(--line-d);border-radius:8px;padding:6px 11px;cursor:pointer;transition:.14s}
+.quick button:hover{color:var(--cream);border-color:var(--line-d2)}
+
+.readout{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:16px 0 4px;padding:14px 16px;border-radius:14px;
+  background:rgba(240,166,58,.06);border:1px solid rgba(240,166,58,.18)}
+.readout .rk{font-size:12px;color:var(--cream-mut)}
+.readout .rk b{display:block;font-family:var(--mono);font-size:20px;font-weight:600;color:var(--gold-2);margin-top:3px}
+.readout .arrow{color:var(--gold);font-size:20px}
+.readout .rk.r{text-align:right}.readout .rk.r b{color:var(--cream)}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;font-family:var(--sans);font-size:15px;font-weight:700;
+  color:#3a2a12;background:linear-gradient(180deg,var(--gold-2),var(--gold));border:0;border-radius:14px;padding:15px;cursor:pointer;margin-top:16px;
+  transition:.16s;box-shadow:0 12px 26px -10px var(--gold-glow)}
+.btn:hover{transform:translateY(-1px);box-shadow:0 18px 32px -12px rgba(240,166,58,.5)}
+.btn:active{transform:translateY(0)}
+.btn.ghost{background:none;color:var(--cream);border:1px solid var(--line-d2);box-shadow:none}
+.btn.ghost:hover{border-color:var(--gold);color:var(--gold-2)}
+.btn.danger{background:none;color:#F08A72;border:1px solid rgba(240,138,114,.4);box-shadow:none}
+.btn.danger:hover{background:rgba(240,138,114,.08)}
+.note{display:flex;align-items:center;gap:8px;justify-content:center;font-size:11.5px;color:var(--cream-faint);margin-top:12px;text-align:center}
+.note svg{width:13px;height:13px;color:var(--gold-deep);flex:none}
+
+.params{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
+.pfield{background:rgba(0,0,0,.3);border:1px solid var(--line-d);border-radius:12px;padding:11px 13px}
+.pfield .pl{font-size:10.5px;color:var(--cream-faint);margin-bottom:6px}
+.pfield .pv{font-family:var(--mono);font-size:17px;font-weight:600}
+.pfield .pv small{font-size:11px;color:var(--cream-mut);font-weight:400}
+
+.session{margin-top:16px;border:1px solid rgba(240,166,58,.24);border-radius:16px;overflow:hidden;background:linear-gradient(180deg,rgba(240,166,58,.07),rgba(240,166,58,.015))}
+.session-h{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--line-d)}
+.session-h .live{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--gold-2)}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--gold);animation:pulse 1.8s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(240,166,58,.45)}100%{box-shadow:0 0 0 9px rgba(240,166,58,0)}}
+.session-h .cnt{font-family:var(--mono);font-size:12px;color:var(--cream-mut)}
+.session-b{padding:15px 16px}
+.bal-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.bal-row .bl{font-size:11.5px;color:var(--cream-mut)}
+.bal-big{font-family:var(--mono);font-size:26px;font-weight:600}
+.bal-big small{font-size:14px;color:var(--cream-mut);font-weight:400}
+.prog{height:8px;border-radius:6px;background:rgba(255,240,214,.1);margin:13px 0 8px;overflow:hidden}
+.prog i{display:block;height:100%;width:24%;border-radius:6px;background:linear-gradient(90deg,var(--gold-deep),var(--gold-2))}
+.prog-meta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11.5px;color:var(--cream-mut)}
+.session-actions{display:flex;gap:10px;margin-top:15px}
+.session-actions .btn{margin-top:0}
+
+.acct-big{display:flex;align-items:baseline;gap:8px}
+.acct-big .n{font-family:var(--mono);font-size:34px;font-weight:600;letter-spacing:-.01em}
+.acct-big .c{font-family:var(--mono);font-size:15px;color:var(--cream-mut)}
+.acct-tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--gold-2);background:rgba(240,166,58,.1);border:1px solid rgba(240,166,58,.24);border-radius:8px;padding:4px 9px;margin-top:10px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line-d)}
+.split .sk{font-size:11px;color:var(--cream-faint);margin-bottom:5px}
+.split .sv{font-family:var(--mono);font-size:17px;font-weight:600}
+.claim-big{display:flex;align-items:baseline;gap:8px}
+.claim-big .n{font-family:var(--mono);font-size:30px;font-weight:600;color:var(--gold-2)}
+.claim-big .c{font-family:var(--mono);font-size:14px;color:var(--cream-mut)}
+
+.history{margin-top:16px}
+.tbl-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:660px}
+th{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--cream-faint);font-weight:600;text-align:right;padding:11px 16px;border-bottom:1px solid var(--line-d)}
+th:first-child,td:first-child{text-align:left}
+td{font-family:var(--mono);font-size:13px;padding:13px 16px;border-bottom:1px solid rgba(255,240,214,.05);text-align:right;color:var(--cream)}
+tbody tr{transition:.12s}
+tbody tr:hover{background:rgba(255,240,214,.03)}
+td.addr{color:var(--gold)}
+td.hbtc{color:var(--gold-2)}
+.z{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--zero)}
+.z svg{width:12px;height:12px}
+.tx{color:var(--cream-faint)}.tx:hover{color:var(--gold)}
+
+.foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-top:24px;padding-top:16px;border-top:1px solid var(--line-l);font-size:11.5px;color:var(--ink-mut)}
+
+.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:var(--ink);border:1px solid var(--line-d2);border-radius:12px;padding:12px 18px;font-size:13px;color:var(--cream);box-shadow:0 20px 40px -16px rgba(0,0,0,.6);transition:.28s;z-index:50;display:flex;align-items:center;gap:9px}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast svg{width:15px;height:15px;color:var(--gold)}
+
+@media (max-width:920px){
+  .grid{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr}
+}
+@media (max-width:560px){
+  .stats{grid-template-columns:1fr}
+  .params{grid-template-columns:1fr}
+  .cbh .meta{display:none}
+  .nav-right .chip-l,.nav-right .lang,.nav-right a.navlink{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+  <linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F6C56A"/><stop offset="1" stop-color="#E08C1F"/></linearGradient>
+</defs></svg>
+
+<div class="wrap">
+
+  <nav class="nav">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="18" fill="url(#gg)"/>
+        <path d="M20 9v22M15 13h7.5a3.5 3.5 0 0 1 0 7H15m0 0h8.5a3.5 3.5 0 0 1 0 7H15m0-14v14" stroke="#2a1c08" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="brand-txt"><span class="brand-name">PureMine 纯挖</span><span class="brand-sub">Proof of Swap</span></div>
+    </div>
+    <div class="nav-right">
+      <button class="lang" onclick="toast('正式版将支持 中文 / English 切换')"><b>中</b>/<span>EN</span></button>
+      <button class="navlink" onclick="openHow()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 17h.01M12 13.5c0-1.6 2.5-2 2.5-4A2.5 2.5 0 0 0 10 7.4"/></svg>使用说明</button>
+      <a class="navlink" href="https://hookedbitcoin.org/hookedpool" target="_blank" rel="noopener">官方矿池 ↗</a>
+      <span class="chip-l"><span class="dot"></span>Robinhood Chain · 4663</span>
+      <button class="wallet" id="walletBtn"><span class="dot"></span>连接钱包</button>
+    </div>
+  </nav>
+
+  <div class="thesis">
+    <div>
+      <h1>帮你用最高效的方法，挖到<em>成本最低</em>的币</h1>
+      <p>纯算力投入、零 HBTC 买入 · 连钱包即挖，无需私钥，安全可靠</p>
+    </div>
+    <div class="trust">
+      <span class="tchip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-4z"/></svg>不碰私钥</span>
+      <span class="tchip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16M12 4v16"/></svg>无需充值</span>
+    </div>
+  </div>
+
+  <!-- console -->
+  <div class="console">
+    <div class="blocks">
+      <div class="blk cur" style="flex:1">
+        <div class="bt"><span class="bn" id="curBlock">#—</span><span class="tag">进行中</span></div>
+        <div class="cd" id="countdown">--:--</div>
+        <div class="subm">当前矿块 · 每 600s 封存一块</div>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <div class="cbh">
+      <h2>实时矿池</h2><span class="badge">进行中</span>
+      <span class="meta">连钱包即挖 · 私钥不离手</span>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="k">当前块算力</div><div class="v"><span id="blockWork">—</span> <small>ETH</small></div></div>
+      <div class="stat"><div class="k">OreHook Toll</div><div class="v"><span id="tollRate">—</span><small>%</small></div></div>
+      <div class="stat"><div class="k">整块产量</div><div class="v gold">2430 <small>HBTC</small></div></div>
+      <div class="stat"><div class="k">HBTC 价</div><div class="v"><span id="hbtcPrice">—</span> <small>ETH</small></div></div>
+    </div>
+  </div>
+
+  <!-- main grid -->
+  <div class="grid">
+    <section class="card">
+      <div class="tabs">
+        <div class="tab on" onclick="tab(this,'single')">单次挖<span class="mini">签一次 · 无托管</span></div>
+        <div class="tab" onclick="tab(this,'batch')">多次挖<span class="mini">存一次 · 自动连挖</span></div>
+      </div>
+
+      <div class="pane on" id="single">
+        <div class="field">
+          <div class="flabel"><span>投入</span><span>钱包余额 <span id="walletEth">—</span> ETH</span></div>
+          <div class="frow"><input id="inpSingle" value="0.004" inputmode="decimal"><span class="cur">ETH</span></div>
+          <div class="quick"><button onclick="setv(this,'0.004')">0.004</button><button onclick="setv(this,'0.008')">0.008</button><button onclick="setv(this,'0.016')">0.016</button><button onclick="setv(this,'0.05')">MAX</button></div>
+        </div>
+        <div class="readout">
+          <div class="rk">你挖到<b style="color:var(--gold-2)"><span id="estSingle">—</span></b></div>
+          <span class="arrow">→</span>
+          <div class="rk r">买入 HBTC<b style="color:var(--zero)">0 · 纯挖矿</b></div>
+        </div>
+        <button class="btn" id="btnMineOnce">开始挖矿</button>
+        <div class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>钱包签名一次 · 资金不经手，直接进矿池 · 零 HBTC 买入</div>
+      </div>
+
+      <div class="pane" id="batch">
+        <div class="field">
+          <div class="flabel"><span>存入预存账户</span><span>本金隔离 · 随时可取</span></div>
+          <div class="frow"><input id="inpDeposit" value="0.05" inputmode="decimal"><span class="cur">ETH</span></div>
+        </div>
+        <div class="params">
+          <div class="pfield"><div class="pl">挖矿次数</div><input id="inpCount" value="50" inputmode="numeric" style="background:none;border:0;outline:0;color:var(--cream);font-family:var(--mono);font-size:17px;font-weight:600;width:100%"></div>
+          <div class="pfield"><div class="pl">单次额度 ETH</div><input id="inpPerMine" value="0.004" inputmode="decimal" style="background:none;border:0;outline:0;color:var(--cream);font-family:var(--mono);font-size:17px;font-weight:600;width:100%"></div>
+          <div class="pfield"><div class="pl">买入线 W≤</div><input id="inpBuyLine" value="0.215" inputmode="decimal" style="background:none;border:0;outline:0;color:var(--cream);font-family:var(--mono);font-size:17px;font-weight:600;width:100%"></div>
+        </div>
+        <button class="btn" id="btnStartBatch">存入并开始自动挖矿</button>
+        <div class="session" style="margin-top:14px">
+          <div class="session-h">
+            <span class="live"><span class="pulse"></span>会话</span>
+            <span class="cnt" id="batchUsed">开始后 keeper 代挖 · 你无需再签</span>
+          </div>
+          <div class="session-b">
+            <div class="session-actions" style="margin-top:0">
+              <button class="btn danger" id="btnStopBatch">停止并赎回余额</button>
+            </div>
+          </div>
+        </div>
+        <div class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>预存按你的地址隔离存放，随时可取；停机/赎回只退回你本人。</div>
+      </div>
+    </section>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <section class="card">
+        <div class="card-h"><h2>我的预存账户</h2></div>
+        <div style="padding:16px 19px 19px">
+          <div class="acct-big"><span class="n" id="acctBalance">—</span><span class="c">ETH</span></div>
+          <span class="acct-tag"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5 9-11"/></svg>本金隔离 · 随时可取</span>
+          <div class="split">
+            <div><div class="sk">钱包 HBTC 余额</div><div class="sv gold"><span id="acctHbtc">—</span></div></div>
+            <div><div class="sk">本金安全</div><div class="sv" style="color:var(--zero)">✓ 有保障</div></div>
+          </div>
+          <button class="btn ghost" id="btnWithdraw" style="margin-top:16px">赎回全部余额</button>
+        </div>
+      </section>
+      <section class="card">
+        <div class="card-h"><h2>待领取奖励</h2><span class="chip-d">封存后可领</span></div>
+        <div style="padding:16px 19px 19px">
+          <div class="claim-big"><span class="n" id="pendingReward">—</span><span class="c">HBTC</span></div>
+          <button class="btn" id="btnClaim" style="margin-top:14px">一键领取</button>
+          <div class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-4z"/></svg>奖励直接铸进你自己的钱包</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <section class="card history">
+    <div class="card-h"><h2>挖矿记录</h2><span class="chip-d">本机 · 最近</span></div>
+    <div style="padding:8px 0 4px">
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr><th>区块</th><th>投入</th><th>新增算力</th><th>获得 HBTC</th><th>买入</th><th>时间</th><th>Hash</th></tr></thead>
+          <tbody>
+            <tr id="recordEmpty"><td colspan="7" style="text-align:center;color:var(--cream-faint);padding:22px">连接钱包后，你的挖矿记录会显示在这里 · 每行都会标注「买入 0」证明纯挖矿</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <span>PureMine · Proof-of-Swap 纯挖矿工具 · Robinhood Chain 4663</span>
+    <span>纯零买币 · 无托管单次挖 / 本金隔离多次挖 · 服务费 1%（已含）</span>
+  </div>
+</div>
+
+<div class="modal-bg" id="howBg">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="使用说明">
+    <div class="modal-h"><h3>使用说明 · How it works</h3><button class="x" onclick="closeHow()" aria-label="关闭">✕</button></div>
+    <div class="modal-b">
+      <p class="lead">PureMine 是一个纯挖矿工具：帮你用最高效的方式，在 HBTC 矿池挖到成本最低的币。全程用你自己的钱包签名，我们从不索取私钥。</p>
+      <ol class="steps">
+        <li><b>连接钱包</b>——用 MetaMask / WalletConnect 授权，无需交出私钥。</li>
+        <li><b>挖矿就是一笔 swap</b>——只交协议 toll 当算力、限价卡死 AMM，<b>零 HBTC 买入</b>，这就是"成本最低"。</li>
+        <li><b>两种挖法</b>——单次挖：签一次挖一块、资金不托管；多次挖：存入预存账户，keeper 自动逐块挖，你无需再签。</li>
+        <li><b>预存账户</b>——预存的 ETH 按你的地址隔离存放、随时可赎回；停机只退回你本人，我们碰不到本金。</li>
+        <li><b>领取奖励</b>——矿块封存后，一键把 HBTC 领进你自己的钱包。</li>
+      </ol>
+      <div class="modal-note">服务费：每次挖矿按投入额收取 1% ETH（已含在流程中）。正式版支持 中文 / English 切换。</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><span id="toastMsg"></span></div>
+
+<script>
+// UI-only 交互(标签/使用说明弹窗);web3 逻辑在 app.js
+function tab(el,id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');document.getElementById(id).classList.add('on');
+}
+function setv(btn,v){var i=btn.closest('.field').querySelector('input');i.value=v;i.dispatchEvent(new Event('input'));}
+function openHow(){document.getElementById('howBg').classList.add('show');}
+function closeHow(){document.getElementById('howBg').classList.remove('show');}
+document.getElementById('howBg').addEventListener('click',function(e){if(e.target===this)closeHow();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeHow();});
+</script>
+<script src="config.js"></script>
+<script src="app.js"></script>
