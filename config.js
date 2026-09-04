@@ -2,7 +2,7 @@
 // 无任何外部库依赖：前端只用 window.ethereum(钱包) + fetch(读链)。
 window.CFG = {
   // —— 部署后必填 ——
-  SERVICE: "0x0000000000000000000000000000000000000000", // TODO: 部署后填服务合约地址
+  SERVICE: "0x46E3c45BA938079148538C948D0F48Dc1e623e10", // 已部署 2026-09-04 · owner 0x4aa0 / keeper 0x0cbE · 已链上核对=审计版
   KEEPER_API: "http://127.0.0.1:8899",                    // TODO: 填 keeper 后端地址(多次挖用)
 
   // —— 链 ——
