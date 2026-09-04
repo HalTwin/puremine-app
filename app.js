@@ -4,6 +4,13 @@
 const CFG = window.CFG;
 const SEL = CFG.SEL;
 let account = null;
+let wallet = null;                              // 当前选中的钱包 provider(不再盲用 window.ethereum)
+// EIP-6963 多钱包发现:收集所有已安装的 EVM 钱包,连接时让用户选,避免连错(比如被 Solana 钱包抢注)
+const _wallets = [];
+window.addEventListener("eip6963:announceProvider", (e) => {
+  if (!_wallets.find((p) => p.info.uuid === e.detail.info.uuid)) _wallets.push(e.detail);
+});
+window.dispatchEvent(new Event("eip6963:requestProvider"));
 
 // ---------- 编码/格式化 ----------
 const strip0x = (h) => (h.startsWith("0x") ? h.slice(2) : h);
@@ -43,20 +50,51 @@ const readUint = async (to, data) => BigInt(await ethCall(to, data));
 
 // ---------- 钱包 ----------
 async function connect() {
-  if (!window.ethereum) { toast("未检测到钱包,请安装 MetaMask 等浏览器钱包"); return; }
+  let list = _wallets.slice();
+  if (list.length === 0 && window.ethereum) {   // 无 6963 的兜底:老式注入(可能是 providers 数组)
+    const provs = window.ethereum.providers || [window.ethereum];
+    list = provs.map((p, i) => ({ info: { uuid: "legacy" + i, icon: "",
+      name: p.isMetaMask ? "MetaMask" : (p.isOkxWallet || p.isOKExWallet) ? "OKX Wallet" : p.isCoinbaseWallet ? "Coinbase" : p.isRabby ? "Rabby" : "注入钱包" }, provider: p }));
+  }
+  list = list.filter((p) => p.provider && typeof p.provider.request === "function"); // 只留 EVM provider
+  if (list.length === 0) { toast("未检测到 EVM 钱包,请安装 MetaMask / OKX 等浏览器钱包"); return; }
+  if (list.length === 1) { await useWallet(list[0].provider); return; }
+  showWalletPicker(list);                        // 多个钱包 → 弹窗让你选
+}
+
+async function useWallet(provider) {
   try {
-    const accs = await window.ethereum.request({ method: "eth_requestAccounts" });
-    account = accs[0];
+    wallet = provider;
+    const accs = await wallet.request({ method: "eth_requestAccounts" });
+    account = accs && accs[0];
+    if (!account) { toast("未授权账户"); return; }
     await ensureChain();
     onConnected();
+    wallet.on && wallet.on("accountsChanged", (a) => { account = (a && a[0]) || null; if (account) onConnected(); });
   } catch (e) { toast("连接失败: " + (e.message || e)); }
+}
+
+function showWalletPicker(list) {
+  const old = document.getElementById("walletPicker"); if (old) old.remove();
+  const ov = document.createElement("div");
+  ov.id = "walletPicker"; ov.className = "modal-bg show";
+  const item = (p, i) =>
+    `<button data-i="${i}" style="display:flex;align-items:center;gap:12px;width:100%;padding:13px 15px;background:rgba(255,240,214,.04);border:1px solid rgba(255,238,210,.14);border-radius:12px;color:#F2E9D8;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">` +
+    (p.info.icon ? `<img src="${p.info.icon}" width="24" height="24" style="border-radius:6px" alt="">` : `<span style="width:24px;height:24px;border-radius:6px;background:rgba(240,166,58,.25);display:inline-block"></span>`) +
+    `<span>${p.info.name}</span></button>`;
+  ov.innerHTML = `<div class="modal" style="max-width:340px"><div class="modal-h"><h3>选择钱包</h3><button class="x" id="wpX" aria-label="关闭">✕</button></div>` +
+    `<div class="modal-b" style="display:flex;flex-direction:column;gap:8px">${list.map(item).join("")}</div></div>`;
+  document.body.appendChild(ov);
+  ov.querySelectorAll("button[data-i]").forEach((b) => b.addEventListener("click", () => { const i = +b.dataset.i; ov.remove(); useWallet(list[i].provider); }));
+  ov.querySelector("#wpX").addEventListener("click", () => ov.remove());
+  ov.addEventListener("click", (e) => { if (e.target === ov) ov.remove(); });
 }
 async function ensureChain() {
   try {
-    await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: CFG.CHAIN_HEX }] });
+    await wallet.request({ method: "wallet_switchEthereumChain", params: [{ chainId: CFG.CHAIN_HEX }] });
   } catch (e) {
     if (e.code === 4902) { // 链没添加过
-      await window.ethereum.request({
+      await wallet.request({
         method: "wallet_addEthereumChain",
         params: [{
           chainId: CFG.CHAIN_HEX, chainName: CFG.CHAIN_NAME,
@@ -75,9 +113,9 @@ function onConnected() {
 
 // 发一笔交易(钱包签名)
 async function sendTx(to, data, valueWei = 0n) {
-  if (!account) { await connect(); if (!account) return null; }
+  if (!wallet || !account) { toast("请先连接钱包"); connect(); return null; }
   const params = [{ from: account, to, data, value: "0x" + valueWei.toString(16) }];
-  const txh = await window.ethereum.request({ method: "eth_sendTransaction", params });
+  const txh = await wallet.request({ method: "eth_sendTransaction", params });
   toast("已提交,等待确认… " + txh.slice(0, 10));
   return txh;
 }
@@ -234,7 +272,7 @@ async function startBatch() {
       domain: { name: CFG.EIP712_DOMAIN_NAME, version: CFG.EIP712_DOMAIN_VERSION, chainId: CFG.CHAIN_ID, verifyingContract: CFG.SERVICE },
       message: auth,
     };
-    const sig = await window.ethereum.request({ method: "eth_signTypedData_v4", params: [account, JSON.stringify(typedData)] });
+    const sig = await wallet.request({ method: "eth_signTypedData_v4", params: [account, JSON.stringify(typedData)] });
     // 3) 提交 keeper
     const res = await fetch(CFG.KEEPER_API + "/session", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -286,9 +324,6 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btnWithdraw")?.addEventListener("click", doWithdraw);
   document.getElementById("btnClaim")?.addEventListener("click", doClaim);
   document.getElementById("inpSingle")?.addEventListener("input", updateSingleEstimate);
-  if (window.ethereum) {
-    window.ethereum.on?.("accountsChanged", (a) => { account = a[0] || null; if (account) onConnected(); });
-  }
   refreshDashboard();
   setInterval(tickCountdown, 1000);
   setInterval(refreshDashboard, 30000);
